@@ -172,10 +172,9 @@ class TrainValDataset(Dataset):
             labels_out[:, 1:] = torch.from_numpy(labels)
 
         # Convert
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-        img = np.ascontiguousarray(img)
+        img = np.expand_dims(img, axis=0)[::-1] # Add 1 dimension representing color (grayscale)
 
-        return torch.from_numpy(img), labels_out, self.img_paths[index], shapes
+        return torch.from_numpy(np.flip(img,axis=0).copy()), labels_out, self.img_paths[index], shapes
 
     def load_image(self, index, force_load_size=None):
         """Load image.
@@ -186,7 +185,7 @@ class TrainValDataset(Dataset):
         """
         path = self.img_paths[index]
         try:
-            im = cv2.imread(path)
+            im = np.expand_dims(cv2.imread(path, cv2.IMREAD_GRAYSCALE), axis=2) # Reading grayscale
             assert im is not None, f"opencv cannot read image correctly or {path} not exists"
         except:
             im = cv2.cvtColor(np.asarray(Image.open(path)), cv2.COLOR_RGB2BGR)
