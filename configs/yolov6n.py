@@ -6,6 +6,7 @@ model = dict(
     width_multiple=0.25,
     backbone=dict(
         type='EfficientRep',
+        in_channels = 3,
         num_repeats=[1, 6, 12, 18, 6],
         out_channels=[64, 128, 256, 512, 1024],
         ),

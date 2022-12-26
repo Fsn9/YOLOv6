@@ -16,12 +16,12 @@ class Model(nn.Module):
     The default parts are EfficientRep Backbone, Rep-PAN and
     Efficient Decoupled Head.
     '''
-    def __init__(self, config, channels=3, num_classes=None, anchors=None):  # model, input channels, number of classes
+    def __init__(self, config, num_classes=None, anchors=None):  # model, input channels, number of classes
         super().__init__()
         # Build network
         num_layers = config.model.head.num_layers
         #self.mode = config.training_mode
-        self.backbone, self.neck, self.detect = build_network(config, channels, num_classes, anchors, num_layers)
+        self.backbone, self.neck, self.detect = build_network(config, num_classes, anchors, num_layers)
 
         # Init Detect head
         begin_indices = config.model.head.begin_indices
@@ -56,7 +56,7 @@ def make_divisible(x, divisor):
     return math.ceil(x / divisor) * divisor
 
 
-def build_network(config, channels, num_classes, anchors, num_layers):
+def build_network(config, num_classes, anchors, num_layers):
     depth_mul = config.model.depth_multiple
     width_mul = config.model.width_multiple
     num_repeat_backbone = config.model.backbone.num_repeats
@@ -75,7 +75,7 @@ def build_network(config, channels, num_classes, anchors, num_layers):
 
     if 'CSP' in config.model.backbone.type:
         backbone = BACKBONE(
-            in_channels=channels,
+            in_channels=config.model.backbone.in_channels,
             channels_list=channels_list,
             num_repeats=num_repeat,
             block=block,
@@ -90,7 +90,7 @@ def build_network(config, channels, num_classes, anchors, num_layers):
         )
     else:
         backbone = BACKBONE(
-            in_channels=channels,
+            in_channels=config.model.backbone.in_channels,
             channels_list=channels_list,
             num_repeats=num_repeat,
             block=block
@@ -110,5 +110,5 @@ def build_network(config, channels, num_classes, anchors, num_layers):
 
 
 def build_model(cfg, num_classes, device):
-    model = Model(cfg, channels=3, num_classes=num_classes, anchors=cfg.model.head.anchors).to(device)
+    model = Model(cfg, num_classes=num_classes, anchors=cfg.model.head.anchors).to(device)
     return model

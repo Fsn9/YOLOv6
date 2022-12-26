@@ -344,6 +344,7 @@ class Trainer:
         return images, targets
 
     def get_model(self, args, cfg, nc, device):
+        if args.grayscale: cfg.model.backbone.in_channels = 1
         model = build_model(cfg, nc, device)
         weights = cfg.model.pretrained
         if weights:  # finetune if pretrained model is set
