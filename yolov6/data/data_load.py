@@ -43,7 +43,7 @@ def create_dataloader(
             path,
             img_size,
             batch_size,
-            grayscale=False,
+            grayscale=grayscale,
             augment=augment,
             hyp=hyp,
             rect=rect,
