@@ -94,13 +94,16 @@ def fuse_model(model):
     return model
 
 
-def get_model_info(model, img_size=640):
+def get_model_info(model, img_size=640, grayscale=False):
     """Get model Params and GFlops.
     Code base on https://github.com/Megvii-BaseDetection/YOLOX/blob/main/yolox/utils/model_utils.py
     """
     from thop import profile
     stride = 32
-    img = torch.zeros((1, 3, stride, stride), device=next(model.parameters()).device)
+    if grayscale:
+        img = torch.zeros((1, 1, stride, stride), device=next(model.parameters()).device)
+    else:
+        img = torch.zeros((1, 3, stride, stride), device=next(model.parameters()).device)
 
     flops, params = profile(deepcopy(model), inputs=(img,), verbose=False)
     params /= 1e6
