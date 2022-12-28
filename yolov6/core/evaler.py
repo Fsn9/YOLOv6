@@ -70,7 +70,10 @@ class Evaler:
             model = load_checkpoint(weights, map_location=self.device)
             self.stride = int(model.stride.max())
             if self.device.type != 'cpu':
-                model(torch.zeros(1, 3, self.img_size, self.img_size).to(self.device).type_as(next(model.parameters())))
+                if self.grayscale:
+                    model(torch.zeros(1, 1, self.img_size, self.img_size).to(self.device).type_as(next(model.parameters())))
+                else:
+                    model(torch.zeros(1, 3, self.img_size, self.img_size).to(self.device).type_as(next(model.parameters())))
             # switch to deploy
             from yolov6.layers.common import RepVGGBlock
             for layer in model.modules():
