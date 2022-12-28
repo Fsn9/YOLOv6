@@ -36,6 +36,7 @@ def get_args_parser(add_help=True):
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels.')
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences.')
     parser.add_argument('--half', action='store_true', help='whether to use FP16 half-precision inference.')
+    parser.add_argument('--grayscale', action='store_true', help='Setting model in_channels=1')
 
     args = parser.parse_args()
     LOGGER.info(args)
@@ -62,6 +63,7 @@ def run(weights=osp.join(ROOT, 'yolov6s.pt'),
         hide_labels=False,
         hide_conf=False,
         half=False,
+        grayscale=False
         ):
     """ Inference process, supporting inference on one image file or directory which containing images.
     Args:
@@ -100,7 +102,7 @@ def run(weights=osp.join(ROOT, 'yolov6s.pt'),
             os.makedirs(save_txt_path)
 
     # Inference
-    inferer = Inferer(source, weights, device, yaml, img_size, half)
+    inferer = Inferer(source, weights, device, yaml, img_size, half, grayscale)
     inferer.infer(conf_thres, iou_thres, classes, agnostic_nms, max_det, save_dir, save_txt, not not_save_img, hide_labels, hide_conf, view_img)
 
     if save_txt or not not_save_img:

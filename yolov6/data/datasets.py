@@ -600,8 +600,9 @@ class TrainValDataset(Dataset):
 
 
 class LoadData:
-    def __init__(self, path):
+    def __init__(self, path, grayscale=False):
         p = str(Path(path).resolve())  # os-agnostic absolute path
+        self.grayscale = grayscale
         if os.path.isdir(p):
             files = sorted(glob.glob(os.path.join(p, '**/*.*'), recursive=True))  # dir
         elif os.path.isfile(p):
@@ -642,7 +643,10 @@ class LoadData:
         else:
             # Read image
             self.count += 1
-            img = cv2.imread(path)  # BGR
+            if self.grayscale:
+                img = np.expand_dims(cv2.imread(path, cv2.IMREAD_GRAYSCALE), axis=2) # Reading grayscale
+            else:
+                img = cv2.imread(path)  # BGR
         return img, path, self.cap
     def add_video(self, path):
         self.frame = 0

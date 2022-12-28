@@ -21,7 +21,7 @@ from yolov6.utils.nms import non_max_suppression
 from yolov6.utils.torch_utils import get_model_info
 
 class Inferer:
-    def __init__(self, source, weights, device, yaml, img_size, half):
+    def __init__(self, source, weights, device, yaml, img_size, half, grayscale=False):
 
         self.__dict__.update(locals())
 
@@ -35,6 +35,7 @@ class Inferer:
         self.class_names = load_yaml(yaml)['names']
         self.img_size = self.check_img_size(self.img_size, s=self.stride)  # check image size
         self.half = half
+        self.grayscale = grayscale
 
         # Switch model to deploy status
         self.model_switch(self.model.model, self.img_size)
@@ -47,13 +48,14 @@ class Inferer:
             self.half = False
 
         if self.device.type != 'cpu':
-            self.model(torch.zeros(1, 3, *self.img_size).to(self.device).type_as(next(self.model.model.parameters())))  # warmup
+            if self.grayscale:
+                self.model(torch.zeros(1, 1, *self.img_size).to(self.device).type_as(next(self.model.model.parameters())))  # warmup
+            else:
+                self.model(torch.zeros(1, 3, *self.img_size).to(self.device).type_as(next(self.model.model.parameters())))  # warmup
 
         # Load data
-        self.files = LoadData(source)
+        self.files = LoadData(source, self.grayscale)
         self.source = source
-
-
 
     def model_switch(self, model, img_size):
         ''' Model switch to deploy status '''
@@ -69,7 +71,7 @@ class Inferer:
         vid_path, vid_writer, windows = None, None, []
         fps_calculator = CalcFPS()
         for img_src, img_path, vid_cap in tqdm(self.files):
-            img, img_src = self.precess_image(img_src, self.img_size, self.stride, self.half)
+            img, img_src = self.precess_image(img_src, self.img_size, self.stride, self.half, self.grayscale)
             img = img.to(self.device)
             if len(img.shape) == 3:
                 img = img[None]
@@ -152,11 +154,16 @@ class Inferer:
                     vid_writer.write(img_src)
 
     @staticmethod
-    def precess_image(img_src, img_size, stride, half):
+    def precess_image(img_src, img_size, stride, half, grayscale=False):
         '''Process image before image inference.'''
         image = letterbox(img_src, img_size, stride=stride)[0]
         # Convert
-        image = image.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+        if grayscale:
+            image = np.expand_dims(image, axis=0)[::-1] # Add 1 dimension representing color (grayscale)
+            image = torch.from_numpy(np.flip(np.ascontiguousarray(image),axis=0).copy())
+        else:
+            image = image.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+            image = torch.from_numpy(np.ascontiguousarray(image))
         image = torch.from_numpy(np.ascontiguousarray(image))
         image = image.half() if half else image.float()  # uint8 to fp16/32
         image /= 255  # 0 - 255 to 0.0 - 1.0
